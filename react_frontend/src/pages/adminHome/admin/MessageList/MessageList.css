@@ -1,0 +1,65 @@
+/* Optional: If you want slightly more padding or spacing */
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.container-fluid {
+  @REM background: linear-gradient(to top left, #0c30cfff, #cfbd16ff);
+
+  margin: 0;
+  @REM background: linear-gradient(to bottom right, #74ebd5, #acb6e5);
+}
+.message-bubble {
+  color: #fff;
+  @REM color: red;
+}
+.message-list-container {
+  height: 100%;
+  width: 100%;
+  @REM background: linear-gradient(to top left, #3a5df7ff, #f5e12dff);
+  @REM background: linear-gradient(to top left, #3a5df7ff 0% , #a8a596ff 100%);
+  background: linear-gradient(to top left, #5774f5ff 0% , #a8a596ff 100%);
+  @REM background: linear-gradient(to bottom, #a8a596ff 50% , #3a5df7ff 50%);
+  @REM background: linear-gradient(to top left, #a7b6f7ff, #f7eb7fff);
+
+  @REM margin-left:-20px;
+  overflow-y: auto;
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE 10+ */
+}
+
+.message-list-container::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari */
+}
+
+
+
+.user-msg {
+  background-color: #f7eb7fff; /* Soft yellow */
+  color: #333;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.4;
+  padding: 10px 14px;
+  border-radius: 7px 10px 7px 16px;
+}
+.user-msg .timestamp {
+  @REM font-size: 4px;
+  opacity: 0.6;
+  text-align: right;
+  margin-top: 4px;
+}
+
+.bot-msg {
+  @REM background-color: #1228ebab; /* Light grey */
+  background-color: #1d548bff; /* Dark blue */
+  color: white;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 10px 14px;
+ border-radius: 7px 7px 20px 7px;
+}

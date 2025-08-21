@@ -1,0 +1,96 @@
+.chatlist-container {
+  width: 300px;
+  height: 100vh;
+  background: #e3e3f3;
+  display: flex;
+  flex-direction: column;
+  padding-top: 10px;;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  outline: none;
+  background: #fff;
+  border-radius: 5px;
+}
+
+.chatlist-tabs {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+
+.chatlist-tabs button {
+  background: none;
+  border: none;
+  padding: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.chatlist-tabs button.active {
+  border-bottom: 2px solid blue;
+  color: blue;
+}
+
+.chatlist-scroll {
+  overflow-y: auto;
+  flex-grow: 1;
+  padding: 10px;
+}
+
+.chat-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.chat-item:hover {
+  background: #dfefff;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: #ff5722;
+  color: white;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.chat-info {
+  flex: 1;
+}
+
+.chat-top {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.chat-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: gray;
+}
+
+.unread-badge {
+  background: blue;
+  color: white;
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 12px;
+}

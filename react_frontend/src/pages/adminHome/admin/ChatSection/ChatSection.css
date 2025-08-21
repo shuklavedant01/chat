@@ -1,0 +1,63 @@
+/* Container for full chat UI */
+.chat-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Left panel wrapper (icon sidebar) */
+.leftpanel-wrapper {
+  width: 60px;
+  background-color: #00264d;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+}
+
+/* Chat list sidebar (user list + tabs) */
+.chatlist-wrapper {
+  width: 290px;
+  background-color: #e6e9f0;
+  border-right: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main chat area */
+.mainchat-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #f7f8fa;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Chat header, if you have one, should not grow */
+.chat-header {
+  flex-shrink: 0;
+}
+
+/* Chat content that scrolls (message list) */
+.mainchat-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* Message input bar stays at the bottom */
+.message-input-container {
+  flex-shrink: 0;
+}
+
+/* Optional: If you're using a `.main-chat` class for message area */
+.main-chat {
+  flex: 1;
+  background-color: #fff;
+  overflow-y: auto;
+  padding: 20px;
+}

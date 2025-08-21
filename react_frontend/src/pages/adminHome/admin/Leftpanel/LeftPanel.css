@@ -1,0 +1,22 @@
+.left-panel {
+  width: 70px;
+  height: 100vh;
+  background-color: #1d548bff;
+  @rem color: white;
+  border-right: 1px solid #e0e0e0;
+  margin-top: -10px;
+}
+
+.panel-icon {
+  font-size: 22px;
+  @rem color: #3a97e7ff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.panel-icon:hover,
+.panel-icon.active {
+  color: #0d6efd;
+  transform: scale(1.1);
+}

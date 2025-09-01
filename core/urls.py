@@ -19,8 +19,7 @@ from django.urls import path,include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('frontend.urls')),  # 👈 root = React login page
     path('accounts/', include('accounts.urls')),
-    path('api/chat/', include('chat.urls')),
-
+    path('api/chat/', include('chat.urls')),  # Add chat URLs
+    path('', include('frontend.urls')),  # 👈 root = React login page
 ]

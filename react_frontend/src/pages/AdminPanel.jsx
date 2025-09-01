@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import RoleDeptDesigMapping from '../components/admin/RoleDeptDesigMapping';
 import NavMenuPermissions from '../components/navbar/navLinks/NavMenuPermissions';
 import { useUser } from '../context/UserContext.jsx';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
 
 export default function AdminPanel() {
   const { user } = useUser();

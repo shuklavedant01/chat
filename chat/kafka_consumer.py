@@ -3,11 +3,8 @@ import sys
 import os
 import django
 import json
-import asyncio
-from kafka import KafkaConsumer
+import redis
 from django.core.exceptions import ObjectDoesNotExist
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 # Add project root to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,83 +13,60 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django.setup()
 
-from chat.models import Message, ChatRoom
+from chat.models import Message, ChatRoom, UserStatus
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
-# Get channel layer for WebSocket broadcasting
-channel_layer = get_channel_layer()
+# Redis Subscriber
+redis_client = redis.Redis(host='localhost', port=6379, db=1, decode_responses=True)
+pubsub = redis_client.pubsub()
 
-# Kafka Consumer
-consumer = KafkaConsumer(
-    'chat_messages',
-    bootstrap_servers='localhost:9092',
-    value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-    auto_offset_reset='earliest',
-    group_id='chat_group',
-    enable_auto_commit=True
-)
+def start_redis_listener():
+    """Start Redis listener for chat messages"""
+    pubsub.psubscribe('chat_room_*')
+    print("✅ Redis subscriber started. Listening to chat channels...")
+    
+    try:
+        for message in pubsub.listen():
+            if message['type'] == 'pmessage':
+                try:
+                    data = json.loads(message['data'])
+                    process_chat_message(data)
+                except json.JSONDecodeError:
+                    print("⚠️  Invalid JSON received")
+                except Exception as e:
+                    print(f"❌ Error processing message: {e}")
+    except KeyboardInterrupt:
+        print("🛑 Redis subscriber stopped")
+    finally:
+        pubsub.close()
 
-print("✅ Kafka consumer started. Listening to 'chat_messages'...")
-
-for msg in consumer:
-    data = msg.value
+def process_chat_message(data):
+    """Process incoming chat message"""
     room_id = data.get("room_id")
     sender_id = data.get("sender_id")
     content = data.get("text")
 
-    if not (room_id and sender_id and content):
+    if not (room_id and content):
         print("⚠️  Invalid data received:", data)
-        continue
+        return
 
     try:
         room = ChatRoom.objects.get(id=room_id)
-        sender = User.objects.get(id=sender_id)
+        sender = None
+        if sender_id:
+            try:
+                sender = User.objects.get(id=sender_id)
+            except User.DoesNotExist:
+                pass
 
-        # Save message to database
-        message = Message.objects.create(
-            room=room,
-            user=sender,
-            text=content
-        )
-
-        # Broadcast to WebSocket group
-        room_group_name = f'chat_{room_id}'
-        async_to_sync(channel_layer.group_send)(
-            room_group_name,
-            {
-                'type': 'chat_message',
-                'message': content,
-                'sender_id': sender_id,
-                'message_id': message.id,
-                'timestamp': message.timestamp.isoformat()
-            }
-        )
-        
-        print(f"✅ Message saved and broadcasted to WebSocket room {room_id}")
-
-    except ObjectDoesNotExist as e:
-        print(f"❌ Database error: {e}")
-    except Exception as e:
-        print(f"❌ Error processing Kafka message: {e}")
-        
-        print(f"✅ Message saved: '{content}' from {sender.username} in room {room_id}")
-
-        # Broadcast to WebSocket clients
-        room_group_name = f'chat_{room_id}'
-        async_to_sync(channel_layer.group_send)(
-            room_group_name,
-            {
-                'type': 'chat_message',
-                'message': content,
-                'sender_id': sender_id,
-                'message_id': message.id,
-                'timestamp': message.timestamp.isoformat()
-            }
-        )
-        print(f"📡 Broadcasted message to WebSocket group: {room_group_name}")
+        # Message is already saved by the consumer, this is for additional processing if needed
+        print(f"✅ Message processed: '{content}' from {sender.username if sender else 'Guest'} in room {room_id}")
 
     except ObjectDoesNotExist:
-        print(f"❌ Room or sender not found for message: {data}")
+        print(f"❌ Room not found for message: {data}")
     except Exception as e:
-        print(f"❌ Error saving message: {e}")
+        print(f"❌ Error processing message: {e}")
+
+if __name__ == "__main__":
+    start_redis_listener()

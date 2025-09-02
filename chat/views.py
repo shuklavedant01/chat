@@ -1,10 +1,11 @@
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from .models import ChatRoom, Membership, Message
-from .serializers import MessageSerializer
-from .kafka_producer import send_chat_message_to_kafka
+from .models import ChatRoom, Membership, Message, UserStatus
+from .serializers import MessageSerializer, UserStatusSerializer
+from .tasks import send_message_to_room, update_user_status
 
 User = get_user_model()
 
@@ -45,14 +46,13 @@ def create_private_room_between_users(request):
     ])
     return Response({'room_id': room.id})
 
-
-# Send a message to a room via Kafka
+# Send a message to a room (handled by WebSocket now)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def send_message(request):
     room_id = request.data.get("room_id")
     text = request.data.get("text")
-    sender_id = request.data.get("sender_id")  # <-- sender id from frontend
+    sender_id = request.data.get("sender_id")
 
     if not room_id or not text or sender_id is None:
         return Response({"error": "room_id, text, and sender_id are required."}, status=400)
@@ -62,7 +62,6 @@ def send_message(request):
     except ChatRoom.DoesNotExist:
         return Response({"error": "Chat room does not exist."}, status=404)
 
-    # Try to get the User instance by sender_id, or None if not found
     try:
         user = User.objects.get(id=sender_id)
     except (User.DoesNotExist, ValueError, TypeError):
@@ -71,17 +70,27 @@ def send_message(request):
     # Save message in database
     message = Message.objects.create(
         room=room,
-        user=user,  # can be None if invalid sender_id
+        user=user,
         text=text
     )
 
-    # Send to Kafka with sender_id from frontend
-    send_chat_message_to_kafka(room_id, sender_id, text)
+    # Prepare message data for real-time broadcast
+    message_data = {
+        'id': message.id,
+        'text': message.text,
+        'user': {
+            'id': message.user.id if message.user else None,
+            'username': message.user.username if message.user else 'Guest'
+        },
+        'timestamp': message.timestamp.isoformat(),
+        'room_id': room_id
+    }
+    
+    # Send message to room via Celery task
+    send_message_to_room.delay(room_id, message_data)
 
     serializer = MessageSerializer(message)
-    return Response({"status": "Message saved and sent via Kafka", "message": serializer.data})
-
-
+    return Response({"status": "Message saved and sent in real-time", "message": serializer.data})
 
 # Retrieve all messages from a room
 @api_view(['GET'])
@@ -96,18 +105,50 @@ def get_room_messages(request, room_id):
     serializer = MessageSerializer(messages, many=True)
     return Response(serializer.data)
 
+# Get user status
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_user_status(request, user_id):
+    try:
+        user = User.objects.get(id=user_id)
+        status, created = UserStatus.objects.get_or_create(user=user)
+        serializer = UserStatusSerializer(status)
+        return Response(serializer.data)
+    except User.DoesNotExist:
+        return Response({"error": "User not found."}, status=404)
 
-# @api_view(['GET'])
-# @permission_classes([AllowAny])
-# def get_all_chat_data(request):
-#     rooms = ChatRoom.objects.all().values()
-#     memberships = Membership.objects.all().values()
-#     messages = Message.objects.all().values()
-#     users = User.objects.all().values('id', 'username', 'email')
+# Update user status
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def update_user_online_status(request):
+    user_id = request.data.get('user_id')
+    is_online = request.data.get('is_online', False)
+    
+    if not user_id:
+        return Response({'error': 'user_id is required'}, status=400)
+    
+    update_user_status.delay(user_id, is_online)
+    return Response({'status': 'User status update initiated'})
 
-#     return Response({
-#         "users": list(users),
-#         "chat_rooms": list(rooms),
-#         "memberships": list(memberships),
-#         "messages": list(messages)
-#     })
+# Get all users with their status
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_users_with_status(request):
+    users = User.objects.select_related('userstatus').all()
+    user_list = []
+    
+    for user in users:
+        try:
+            status = user.userstatus
+        except UserStatus.DoesNotExist:
+            status = UserStatus.objects.create(user=user)
+        
+        user_list.append({
+            'id': user.id,
+            'username': user.get_username(),
+            'email': user.get_email(),
+            'is_online': status.is_online,
+            'last_seen': status.last_seen.isoformat()
+        })
+    
+    return Response({'users': user_list})

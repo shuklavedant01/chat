@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class ChatRoom(models.Model):
     name = models.CharField(max_length=255, blank=True, null=True)
@@ -32,3 +33,12 @@ class Message(models.Model):
     def __str__(self):
         user_str = self.user.username if self.user else "Anonymous"
         return f"[{self.timestamp}] {user_str}: {self.text[:50]}"
+
+class UserStatus(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    is_online = models.BooleanField(default=False)
+    last_seen = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        status = "Online" if self.is_online else "Offline"
+        return f"{self.user.username}: {status}"

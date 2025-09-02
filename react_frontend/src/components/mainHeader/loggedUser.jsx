@@ -46,7 +46,7 @@ function LoggedUser() {
   };
   useEffect(() => {
     axios
-      .get('http://localhost:5173/accounts/api/profile/', { withCredentials: true })
+      .get('http://localhost:8000/accounts/api/profile/', { withCredentials: true })
       .then((res) => {
         setUser(res.data.user); // set user from API
       })

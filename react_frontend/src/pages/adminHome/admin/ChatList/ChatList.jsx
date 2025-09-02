@@ -4,7 +4,8 @@ import ChatUser from './ChatUser';
 import GroupUser from './GroupUser';
 import axios from 'axios';
 
-function ChatList({ onSelectUser, selectedUser }) {
+function ChatList({ onSelectUser, selectedUser, users }) {
+  // Added users prop
   const [activeTab, setActiveTab] = useState('chats');
   const [searchTerm, setSearchTerm] = useState('');
   const [chatUsers, setChatUsers] = useState([]);
@@ -34,31 +35,27 @@ function ChatList({ onSelectUser, selectedUser }) {
   const currentUser = localStorage.getItem('user');
   const currentUserId = currentUser ? JSON.parse(currentUser).id : null;
 
+  // Updated useEffect to use the users prop directly and set it
   useEffect(() => {
-    axios
-      .get('http://localhost:8000/accounts/api/all_users/', {
-        withCredentials: true,
-      })
-      .then((res) => {
-        const filteredUsers = res.data.users.filter((u) => u.id !== currentUserId);
+    if (users && users.length > 0) {
+      const filteredUsers = users.filter((u) => u.id !== currentUserId);
 
-        const transformedUsers = filteredUsers.map((user) => ({
-          id: user.id,
-          username: user.username,
-          name: user.username,
-          message: `${user.designation || ''} - ${user.department || ''}`,
-          time: 'Now',
-          unread: 0,
-          initials: user.username?.[0]?.toUpperCase() || '?',
-          type: 'user',
-        }));
+      const transformedUsers = filteredUsers.map((user) => ({
+        id: user.id,
+        username: user.username,
+        name: user.username,
+        message: `${user.designation || ''} - ${user.department || ''}`,
+        time: 'Now',
+        unread: 0,
+        initials: user.username?.[0]?.toUpperCase() || '?',
+        type: 'user',
+        // Assuming user object from prop has an 'is_online' field
+        is_online: user.is_online || false,
+      }));
 
-        setChatUsers(transformedUsers);
-      })
-      .catch((err) => {
-        console.error('Failed to fetch users:', err);
-      });
-  }, [currentUserId]);
+      setChatUsers(transformedUsers);
+    }
+  }, [users, currentUserId]); // Depend on users and currentUserId
 
   const getFilteredUsers = () => {
     const list = activeTab === 'chats' ? chatUsers : groupUsers;

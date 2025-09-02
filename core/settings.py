@@ -84,7 +84,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework.authtoken', 
+    'rest_framework.authtoken',
     'rest_framework',
     # Custom
     'corsheaders',
@@ -95,6 +95,27 @@ INSTALLED_APPS = [
     # WebSocket support
     'channels',
 ]
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# Redis Configuration
+REDIS_URL = 'redis://localhost:6379/1'
+
+# Channels Configuration (using Redis)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # MIDDLEWARE
 MIDDLEWARE = [
@@ -113,7 +134,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
 ]
-CORS_ALLOW_CREDENTIALS = True   
+CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = ['http://localhost:5173']
 
@@ -142,16 +163,6 @@ TEMPLATES = [
 # WSGI and ASGI
 WSGI_APPLICATION = 'core.wsgi.application'
 ASGI_APPLICATION = 'core.asgi.application'  # ✅ Needed for Channels/WebSocket
-
-# Channel Layers for WebSocket
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-        },
-    },
-}
 
 # PASSWORD VALIDATION
 AUTH_PASSWORD_VALIDATORS = [

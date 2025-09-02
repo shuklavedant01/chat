@@ -3,38 +3,11 @@ import axios from 'axios';
 import ChatHeader from '../ChatHeader/ChatHeader';
 import MessageList from '../MessageList/MessageList';
 import MessageInput from '../MessageInput/MessageInput';
-import useChatSocket from '../../../../utils/hooks/useChatSocket';
 import './ChatWindow.css';
 
 function ChatWindow({ user }) {
   const [messages, setMessages] = useState([]);
   const senderId = JSON.parse(localStorage.getItem('user'))?.id;
-
-  // WebSocket hook for real-time messaging
-  useChatSocket(user?.roomId, (data) => {
-    // Handle incoming WebSocket message
-    const time = new Date(data.timestamp).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    const newMsg = {
-      id: data.message_id || Date.now(),
-      text: data.text,
-      time,
-      sender: data.sender_id === senderId ? 'user' : 'bot',
-    };
-
-    setMessages((prev) => {
-      // Avoid duplicate messages by checking both id and text+timestamp
-      const exists = prev.some(
-        (m) =>
-          m.id === newMsg.id || (m.text === newMsg.text && Math.abs(new Date(m.time) - new Date(newMsg.time)) < 1000),
-      );
-      if (exists) return prev;
-      return [...prev, newMsg];
-    });
-  });
 
   useEffect(() => {
     if (!user?.roomId) {
@@ -42,7 +15,6 @@ function ChatWindow({ user }) {
       return;
     }
 
-    // Load existing messages
     axios
       .get(`http://localhost:8000/api/chat/room-messages/${user.roomId}/`)
       .then((res) => {
@@ -54,6 +26,7 @@ function ChatWindow({ user }) {
             minute: '2-digit',
           }),
           sender: m.user === senderId ? 'user' : 'bot',
+          username: m.sender_username || 'Guest',
         }));
         setMessages(mapped);
       })
@@ -74,12 +47,22 @@ function ChatWindow({ user }) {
       sender_id: senderId,
     };
 
-    // Send via HTTP to Kafka (which will broadcast via WebSocket)
     axios
       .post('http://localhost:8000/api/chat/send-message/', payload)
       .then(() => {
-        console.log('✅ Message sent successfully');
-        // Don't add to state here - let WebSocket handle it
+        const time = new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+        const newMsg = {
+          id: Date.now(),
+          text,
+          sender: 'user',
+          time,
+        };
+
+        setMessages((prev) => [...prev, newMsg]);
       })
       .catch((err) => {
         console.error('Failed to send message:', err);

@@ -57,3 +57,5 @@ def update_user_status(user_id, is_online):
         return f"Status updated for user {user_id}"
     except Exception as e:
         return f"Error updating status: {str(e)}"
+
+
